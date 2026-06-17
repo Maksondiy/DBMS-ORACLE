@@ -62,6 +62,13 @@ window.QUIZ_QUESTIONS = [
         "find": "DBMS_OUTPUT.PUT_LINE(c%ROWCOUNT)",
         "note": "Printed straight after OPEN, before any FETCH, so ROWCOUNT is still 0."
       }
+    ],
+    "walkthrough": [
+      "`OPEN c` runs the query and positions the cursor before the first row — nothing is fetched yet.",
+      "`c%ROWCOUNT` counts rows returned by `FETCH` so far, so it is `0`.",
+      "`DBMS_OUTPUT.PUT_LINE(c%ROWCOUNT)` therefore prints `0`.",
+      "Only the later `FETCH c INTO v_id` would make `c%ROWCOUNT` become `1`.",
+      "Output: `0`."
     ]
   },
   {
@@ -103,6 +110,12 @@ window.QUIZ_QUESTIONS = [
         "find": "SQL%ROWCOUNT",
         "note": "Total rows affected by the whole FORALL = 3."
       }
+    ],
+    "walkthrough": [
+      "`v_ids` is a nested table holding three ids: `101`, `102`, `103`.",
+      "`FORALL` hands all three `UPDATE`s to the SQL engine in a single context switch; each matches exactly one employee.",
+      "After a `FORALL`, `SQL%ROWCOUNT` is the total rows affected across all iterations: `1 + 1 + 1 = 3`.",
+      "Output: `3`."
     ]
   },
   {
@@ -160,8 +173,31 @@ window.QUIZ_QUESTIONS = [
         "isCorrect": true
       }
     ],
-    "explanation": "No DML statement has run yet, so the implicit-cursor attribute `SQL%FOUND` is `NULL` (Lecture 5: all implicit-cursor attributes are NULL if no SQL statement was previously run). `NOT NULL` is itself `NULL`, so the `IF` condition is not TRUE and control falls through to the `ELSE` branch, printing `1`.",
-    "id": 5
+    "explanation": "Oracle opens and then automatically closes the implicit cursor for the `UPDATE` as part of running it, so by the time the `IF` is reached `SQL%ISOPEN` is always `FALSE`. The condition is not TRUE, so the `ELSE` branch runs and it prints `Is not opened`. (An implicit cursor is never open between statements — only explicit cursors stay open until you `CLOSE` them.)",
+    "id": 5,
+    "annotations": [
+      {
+        "n": 1,
+        "find": "UPDATE employees",
+        "note": "This DML uses the implicit (`SQL`) cursor, which Oracle opens and closes automatically as part of running the statement."
+      },
+      {
+        "n": 2,
+        "find": "SQL%ISOPEN",
+        "note": "For an implicit cursor this is `always FALSE` — the cursor is never left open between statements."
+      },
+      {
+        "n": 3,
+        "find": "'Is not opened'",
+        "note": "Because the `IF` is false, control falls to the `ELSE` and this line is printed."
+      }
+    ],
+    "walkthrough": [
+      "The `UPDATE` executes; Oracle opens and immediately closes its implicit cursor.",
+      "`SQL%ISOPEN` for an implicit cursor is always `FALSE`.",
+      "The `IF` condition is false, so the `ELSE` branch runs.",
+      "Output: `Is not opened`."
+    ]
   },
   {
     "source": "exam",
@@ -276,37 +312,8 @@ window.QUIZ_QUESTIONS = [
         "isCorrect": true
       }
     ],
-    "explanation": "Lecture 5 (Explicit cursors): they `Have names`, `Are unique identifiers in the block`, `Can't appear in an expression`, `cannot take values`, and `Are associated with SELECT statements ... The INTO clause should not appear in the definition.` Also: `If we try to open a cursor that is already opened or to close an already closed one, exceptions will be raised.`",
+    "explanation": "The sequence works with an explicit cursor: it is declared with a name and driven by hand with `OPEN`, a `FETCH` inside a loop, and `CLOSE` — so an iterative (loop) control structure is also used. Because the cursor is named and managed manually it is explicit, not implicit (an implicit cursor is the one Oracle creates automatically for a DML statement or a `SELECT ... INTO`).",
     "id": 9
-  },
-  {
-    "source": "exam",
-    "type": "theory",
-    "question": "Consider the following PL/SQL command sequence (with CREATE TABLE messages, cursor c1, FETCH, INSERT INTO messages). Which statements are correct:",
-    "answers": [
-      {
-        "text": "an implicit cursor is tested",
-        "isCorrect": false
-      },
-      {
-        "text": "a table is created",
-        "isCorrect": true
-      },
-      {
-        "text": "an explicit cursor is defined",
-        "isCorrect": true
-      },
-      {
-        "text": "an iterative (loop) control structure is used",
-        "isCorrect": true
-      },
-      {
-        "text": "two composite variables are defined",
-        "isCorrect": false
-      }
-    ],
-    "explanation": "The sequence creates a table (`CREATE TABLE`), defines and uses an explicit cursor (named cursor with `FETCH`), and uses an iterative (loop) control structure. It does not test an implicit cursor, and it does not declare two composite variables.",
-    "id": 10
   },
   {
     "source": "exam",
@@ -335,7 +342,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "The `%FOUND` attribute exists for both implicit cursors (`SQL%FOUND`) and explicit cursors (`cursor%FOUND`). It is not a property of tables, exceptions or records.",
-    "id": 11
+    "id": 10
   },
   {
     "source": "exam",
@@ -364,7 +371,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "The question asks which statements are WRONG. `exam_grade` is never initialised, so it is `NULL`; `NULL >= 5` evaluates to `NULL` (not TRUE), so the `ELSE` runs and the block prints `failed!`. Therefore the truly correct facts are \"it displays failed!\" and \"it uses a conditional structure\" (so those are NOT wrong). The wrong statements are: that it displays `passed!`, that it depends on the grade value, and that it displays nothing.",
-    "id": 12,
+    "id": 11,
     "annotations": [
       {
         "n": 1,
@@ -376,6 +383,12 @@ window.QUIZ_QUESTIONS = [
         "find": "dbms_output.put_line('failed!')",
         "note": "The ELSE branch runs, so this is what prints."
       }
+    ],
+    "walkthrough": [
+      "`exam_grade` is declared but never assigned, so its value is `NULL`.",
+      "`NULL >= 5` evaluates to `NULL`, which is not `TRUE`.",
+      "The `IF` takes the `ELSE` branch and prints `failed!`.",
+      "So the WRONG statements are: it displays `passed!`, it depends on the grade, and it displays nothing."
     ]
   },
   {
@@ -405,7 +418,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "Valid: `DATE := SYSDATE`, `VARCHAR2(15) DEFAULT 'Ion'`, and `BOOLEAN NOT NULL := FALSE` (a `NOT NULL` variable is fine as long as it is initialised). Invalid: assigning `'Anastasia Nicoleta'` to a `VARCHAR2(5)` (the literal is longer than the declared size), and `v_salary NUMBER NOT NULL;` with no initial value (a `NOT NULL` variable must be initialised).",
-    "id": 13
+    "id": 12
   },
   {
     "source": "exam",
@@ -434,7 +447,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "`EXISTS(i)` is a built-in collection *method* that returns `TRUE` when element `i` of the collection exists (and `FALSE` otherwise) — it is not a relational operator. `FIRST`/`LAST` are also collection methods, and the `FOR` loop counter `i` is declared implicitly, so it needs no declaration and no prior query.",
-    "id": 14,
+    "id": 13,
     "annotations": [
       {
         "n": 1,
@@ -470,36 +483,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "A, B, C and D are valid exception sections (`WHEN OTHERS` may appear, and combining names with `OR` is allowed). E is invalid because `WHEN OTHERS` must be the *last* handler — no specific handler (here `NO_DATA_FOUND`) may follow it.",
-    "id": 15
-  },
-  {
-    "source": "exam",
-    "type": "theory",
-    "question": "Consider the following command sequence (CREATE OR REPLACE PROCEDURE modify, CREATE OR REPLACE PROCEDURE example, EXECUTE example). Which of the following statements are correct:",
-    "answers": [
-      {
-        "text": "a procedure is called from another procedure",
-        "isCorrect": true
-      },
-      {
-        "text": "an error is generated because the example procedure has no parameters",
-        "isCorrect": false
-      },
-      {
-        "text": "an error is generated because the variable i used in the loop was not declared",
-        "isCorrect": false
-      },
-      {
-        "text": "two stored procedures are created",
-        "isCorrect": true
-      },
-      {
-        "text": "the credit limit is changed for 4 customers",
-        "isCorrect": true
-      }
-    ],
-    "explanation": "Two stored procedures are created, and one procedure is called from inside the other; the credit limit is updated for the affected customers. There is no error: a procedure may have no parameters, and the loop counter is declared implicitly.",
-    "id": 16
+    "id": 14
   },
   {
     "source": "exam",
@@ -528,7 +512,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "PL/SQL does not directly support DDL (`CREATE`, `DROP`, `ALTER`) or DCL (`GRANT`) — those must be run through `EXECUTE IMMEDIATE`. DML (`DELETE`, `UPDATE`) and transaction control (`COMMIT`, `SAVEPOINT`) are supported directly.",
-    "id": 17
+    "id": 15
   },
   {
     "source": "exam",
@@ -556,8 +540,31 @@ window.QUIZ_QUESTIONS = [
         "isCorrect": false
       }
     ],
-    "explanation": "The cursor `c` is never opened, so `FETCH c INTO r` raises an 'invalid cursor' error — not NO_DATA_FOUND. The inner handler only catches NO_DATA_FOUND, so it does not match; the error propagates to the outer `WHEN OTHERS`, which prints `C`. (Lecture 6.)",
-    "id": 18
+    "explanation": "The cursor `c` is never opened, so `FETCH c INTO r` raises an 'invalid cursor' error — not NO_DATA_FOUND. The inner handler only catches NO_DATA_FOUND, so it does not match; the error propagates to the `WHEN OTHERS` handler, which prints `B`.",
+    "id": 16,
+    "annotations": [
+      {
+        "n": 1,
+        "find": "FETCH c INTO r;",
+        "note": "The cursor `c` was never `OPEN`ed, so this raises `INVALID_CURSOR` (ORA-01001), not `NO_DATA_FOUND`."
+      },
+      {
+        "n": 2,
+        "find": "WHEN NO_DATA_FOUND THEN",
+        "note": "Does not match an invalid-cursor error, so this handler is skipped."
+      },
+      {
+        "n": 3,
+        "find": "WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('B')",
+        "note": "The catch-all handler matches and prints `B`."
+      }
+    ],
+    "walkthrough": [
+      "`c` is declared but never `OPEN`ed.",
+      "`FETCH c INTO r` raises `INVALID_CURSOR` (ORA-01001) — `FETCH`, not a `SELECT INTO`, so never `NO_DATA_FOUND`.",
+      "`WHEN NO_DATA_FOUND` does not match; `WHEN OTHERS` catches the error.",
+      "Output: `B`."
+    ]
   },
   {
     "source": "exam",
@@ -586,7 +593,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "Only the executable part (`BEGIN ... END`) is mandatory. The declarative part (`DECLARE`) and the exception-handling part (`EXCEPTION`) are both optional.",
-    "id": 19,
+    "id": 17,
     "annotations": [
       {
         "n": 1,
@@ -622,7 +629,19 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "A, B and D are valid. C is wrong because it lists `WHEN NO_DATA_FOUND` twice (a handler may not be duplicated). E is wrong because `WHEN OTHERS` must be the last handler, so nothing may follow it.",
-    "id": 20
+    "id": 18,
+    "annotations": [
+      {
+        "n": 1,
+        "find": "WHEN NO_DATA_FOUND THEN stmts1; WHEN NO_DATA_FOUND THEN stmts2;",
+        "note": "Construct C lists the same handler twice — a handler may not be duplicated, so C is invalid."
+      },
+      {
+        "n": 2,
+        "find": "WHEN OTHERS THEN stmts1; WHEN NO_DATA_FOUND THEN stmts2;",
+        "note": "Construct E puts `WHEN OTHERS` before a specific handler — `WHEN OTHERS` must be last, so E is invalid."
+      }
+    ]
   },
   {
     "source": "exam",
@@ -651,7 +670,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "A cursor `FOR` loop removes the need to explicitly `OPEN` the cursor, `FETCH` each row into variables, and `CLOSE` the cursor — Oracle does all three for you. You still have to declare the cursor.",
-    "id": 21
+    "id": 19
   },
   {
     "source": "exam",
@@ -680,7 +699,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "This creates a subprogram (a procedure) with an `OUT` parameter, and its body uses the group function `AVG`. A procedure does not use `RETURN` to return a value (that is for functions), and the `SELECT ... INTO` is correctly written, so there is no error.",
-    "id": 22,
+    "id": 20,
     "annotations": [
       {
         "n": 1,
@@ -692,6 +711,12 @@ window.QUIZ_QUESTIONS = [
         "find": "AVG(salary)",
         "note": "A group (aggregate) function used in the body."
       }
+    ],
+    "walkthrough": [
+      "The procedure compiles and is created — no execution output by itself.",
+      "`p_avg_sal` is an `OUT` parameter; `SELECT AVG(salary) INTO p_avg_sal` is a valid single-row `SELECT INTO`.",
+      "A procedure returns values through `OUT` parameters, so no `RETURN value` is needed.",
+      "Result: a valid subprogram with an `OUT` parameter using the group function `AVG`."
     ]
   },
   {
@@ -717,13 +742,20 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "The first `PUT_LINE` runs right after `OPEN c`, before any `FETCH`, so `c%ROWCOUNT` is always `0`. The two later `FETCH c INTO r` statements cannot raise `NO_DATA_FOUND` — `FETCH` simply sets `%NOTFOUND`; only `SELECT ... INTO` raises `NO_DATA_FOUND`. The block compiles fine.",
-    "id": 23,
+    "id": 21,
     "annotations": [
       {
         "n": 1,
         "find": "DBMS_OUTPUT.PUT_LINE('Number of elements '||c%ROWCOUNT)",
         "note": "Runs immediately after OPEN, before any FETCH, so ROWCOUNT = 0."
       }
+    ],
+    "walkthrough": [
+      "`OPEN c` runs the query; no `FETCH` has happened yet, so `c%ROWCOUNT` is `0`.",
+      "The first `PUT_LINE` (line 10) therefore always prints `Number of elements 0`.",
+      "The loop then fetches and classifies each department row.",
+      "The later `FETCH c INTO r` statements only set `%NOTFOUND`; they can never raise `NO_DATA_FOUND` (only `SELECT INTO` does).",
+      "So only statement C is true and the block compiles fine."
     ]
   },
   {
@@ -753,7 +785,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "DDL such as `DROP TABLE` cannot be written directly in PL/SQL; it must be run dynamically with `EXECUTE IMMEDIATE`.",
-    "id": 24
+    "id": 22
   },
   {
     "source": "exam",
@@ -782,13 +814,19 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "The block does not compile: a `SELECT` inside PL/SQL must have an `INTO` clause to receive the values. Here the `SELECT last_name||' '||first_name` has no `INTO full_name`, which is a syntax error.",
-    "id": 25,
+    "id": 23,
     "annotations": [
       {
         "n": 1,
         "find": "SELECT last_name||' '||first_name AS full_name FROM Employees",
         "note": "No INTO clause — illegal in PL/SQL, so the block will not compile."
       }
+    ],
+    "walkthrough": [
+      "Inside PL/SQL every `SELECT` must have an `INTO` clause to receive its columns.",
+      "Here `SELECT last_name||' '||first_name` has no `INTO full_name`.",
+      "This is a compile-time (PLS) error, so the block never runs.",
+      "Result: the block contains an error and will not run."
     ]
   },
   {
@@ -818,7 +856,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "An implicit cursor is created and managed automatically by Oracle for every DML statement (and single-row `SELECT INTO`). You do not open, fetch or close it; you only read its attributes via `SQL%...`.",
-    "id": 26
+    "id": 24
   },
   {
     "source": "exam",
@@ -847,7 +885,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "PL/SQL conditional (logical) expressions use the operators `AND`, `OR` and `NOT`. The others are arithmetic/relational symbols or invalid operators.",
-    "id": 27
+    "id": 25
   },
   {
     "source": "exam",
@@ -876,13 +914,19 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "The block does not compile: `(a,b) := SELECT ...` is not valid PL/SQL. To read query results into variables you must use `SELECT SUM(salary), MAX(salary) INTO a, b FROM employees;`.",
-    "id": 28,
+    "id": 26,
     "annotations": [
       {
         "n": 1,
         "find": "(a,b):=SELECT SUM(SALARY),MAX(SALARY) FROM EMPLOYEES",
         "note": "Invalid syntax — use SELECT ... INTO a, b instead."
       }
+    ],
+    "walkthrough": [
+      "`T` is `FALSE`, so `NOT T` is `TRUE` and the `THEN` branch is parsed.",
+      "`(a,b) := SELECT SUM(SALARY),MAX(SALARY) FROM EMPLOYEES;` is not valid PL/SQL syntax.",
+      "Reading query results into variables requires `SELECT ... INTO a, b`.",
+      "Result: the block does not compile."
     ]
   },
   {
@@ -912,13 +956,19 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "It is a valid block using an explicit cursor that sequentially traverses an in-memory result area. But the loop is `WHILE cursor1%FOUND` *before* the first `FETCH`: at that point `%FOUND` is `NULL`, so the `WHILE` condition is not TRUE and the loop body never runs — the block is correct but displays nothing.",
-    "id": 29,
+    "id": 27,
     "annotations": [
       {
         "n": 1,
         "find": "WHILE cursor1%FOUND LOOP",
         "note": "Before the first FETCH, %FOUND is NULL, so the loop never starts."
       }
+    ],
+    "walkthrough": [
+      "`OPEN cursor1` succeeds, but no `FETCH` has run yet, so `cursor1%FOUND` is `NULL`.",
+      "`WHILE cursor1%FOUND` tests the condition before the first `FETCH`; `NULL` is not `TRUE`.",
+      "The loop body never executes.",
+      "Result: a valid block that displays nothing (the `FETCH` should come before the `%FOUND` test)."
     ]
   },
   {
@@ -948,7 +998,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "The two `FIND_EMP` functions have the same name but different parameter lists, which is valid overloading inside a package. A package specification compiles on its own (the `BODY` is created separately), and `v_total` is a public variable accessible as `p_employees.v_total`.",
-    "id": 30,
+    "id": 28,
     "annotations": [
       {
         "n": 1,
@@ -984,7 +1034,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "`round((sysdate - p_hire_date)/365, 0)` converts a difference in days to whole *years*, so the function returns seniority in years. Because it takes only an `IN` parameter and returns a value, it can be called inside a `SELECT`, which then lists employees with more than 10 years of seniority.",
-    "id": 31,
+    "id": 29,
     "annotations": [
       {
         "n": 1,
@@ -1020,7 +1070,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "Group (aggregate) functions like `MAX` and `MIN`, and the SQL-only function `DECODE`, cannot appear in a purely procedural PL/SQL assignment — they are only valid inside a SQL statement. `SUBSTR` and `NVL` are single-row functions and can be used directly in PL/SQL.",
-    "id": 32
+    "id": 30
   },
   {
     "source": "exam",
@@ -1049,13 +1099,19 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "It uses an explicit cursor over customers with `credit_limit > 1000` and (via the loop) a record variable. But it will not run correctly: the cursor `FOR` loop implicitly redeclares `p` as its record, and `EXIT WHEN p%ROWCOUNT >= 5` is wrong — `%ROWCOUNT` is a *cursor* attribute (`c%ROWCOUNT`), not a record attribute.",
-    "id": 33,
+    "id": 31,
     "annotations": [
       {
         "n": 1,
         "find": "EXIT WHEN p%ROWCOUNT>=5",
         "note": "p is the loop record, not the cursor; %ROWCOUNT must be c%ROWCOUNT."
       }
+    ],
+    "walkthrough": [
+      "The cursor `FOR` loop `FOR p IN c` implicitly declares its own record `p`, shadowing the declared `p`.",
+      "`EXIT WHEN p%ROWCOUNT >= 5` then references `%ROWCOUNT` on the record `p`.",
+      "`%ROWCOUNT` is a cursor attribute (`c%ROWCOUNT`), not a record attribute — this is an error.",
+      "Result: the block will not run correctly."
     ]
   },
   {
@@ -1085,7 +1141,30 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "The block performs an `UPDATE` (allowed in PL/SQL) and then a `ROLLBACK` (also allowed). It does not display any cursor attribute, and an `UPDATE` that matches no row does not raise `NO_DATA_FOUND` (it just sets `SQL%ROWCOUNT` to 0).",
-    "id": 34
+    "id": 32,
+    "annotations": [
+      {
+        "n": 1,
+        "find": "UPDATE Employees",
+        "note": "A DML `UPDATE` is allowed directly in a PL/SQL block."
+      },
+      {
+        "n": 2,
+        "find": "ROLLBACK;",
+        "note": "Transaction control (`ROLLBACK`/`COMMIT`) is also allowed in a PL/SQL block; this undoes the update."
+      },
+      {
+        "n": 3,
+        "find": "SQLERRM",
+        "note": "Only printed if an exception occurs — but an `UPDATE` matching no row is not an error, so nothing is printed here."
+      }
+    ],
+    "walkthrough": [
+      "`percent := 15` then the `UPDATE` runs (allowed in PL/SQL); if employee 120 exists its salary changes.",
+      "`ROLLBACK` undoes the update — also allowed in a block.",
+      "An `UPDATE` matching no row is not an error and never raises `NO_DATA_FOUND`; it just sets `SQL%ROWCOUNT` to 0.",
+      "No exception occurs, so the `WHEN OTHERS` / `SQLERRM` handler does not run."
+    ]
   },
   {
     "source": "exam",
@@ -1114,13 +1193,19 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "It does create a subprogram, but the function is faulty: a function must `RETURN` a value on its normal execution path, and here the body only returns inside the exception handlers — after a successful `SELECT ... INTO` there is no `RETURN v_sal`, so the value is never returned.",
-    "id": 35,
+    "id": 33,
     "annotations": [
       {
         "n": 1,
         "find": "SELECT salary INTO v_sal FROM employees WHERE employee_id=v_id;",
         "note": "On success there is no RETURN of v_sal afterwards — a function must return a value."
       }
+    ],
+    "walkthrough": [
+      "A function must `RETURN` a value on its normal (non-exception) execution path.",
+      "After a successful `SELECT salary INTO v_sal`, there is no `RETURN v_sal`.",
+      "The body only returns inside the exception handlers, so on success no value is returned.",
+      "Result: a subprogram is created but it is faulty — the salary is never returned."
     ]
   },
   {
@@ -1150,7 +1235,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "The `WHERE 1=2` makes the `SELECT ... INTO` return zero rows, which raises `NO_DATA_FOUND`. That exception is caught by the handler, which prints `v` — but `v` was never assigned, so it is `NULL` and an empty line is shown. So the exception is handled properly and the block effectively displays nothing.",
-    "id": 36,
+    "id": 34,
     "annotations": [
       {
         "n": 1,
@@ -1162,6 +1247,12 @@ window.QUIZ_QUESTIONS = [
         "find": "DBMS_OUTPUT.PUT_LINE(v)",
         "note": "v is uninitialised (NULL), so this prints a blank line."
       }
+    ],
+    "walkthrough": [
+      "`WHERE 1=2` is never true, so the `SELECT ... INTO data` returns zero rows.",
+      "Zero rows from a `SELECT INTO` raises `NO_DATA_FOUND`.",
+      "The handler catches it and prints `v`, but `v` was never assigned, so it is `NULL`.",
+      "Output: an empty line — the exception is handled and effectively nothing is displayed."
     ]
   },
   {
@@ -1191,7 +1282,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "A relational DBMS protects data integrity through transaction management (atomic, consistent commits/rollbacks) and automatic recovery procedures after failures. Encryption and access procedures are about security/access, not integrity, and virtual tables (views) are unrelated.",
-    "id": 37
+    "id": 35
   },
   {
     "source": "exam",
@@ -1220,7 +1311,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "The `BEFORE INSERT ... FOR EACH ROW` trigger caps the ordered quantity at the available stock and then updates stock. The `INSERT` and the trigger's `UPDATE` are part of the *same* transaction, so the `ROLLBACK` afterwards cancels both.",
-    "id": 38,
+    "id": 36,
     "annotations": [
       {
         "n": 1,
@@ -1232,42 +1323,12 @@ window.QUIZ_QUESTIONS = [
         "find": "ROLLBACK",
         "note": "Undoes both the INSERT and the trigger's UPDATE — one transaction."
       }
-    ]
-  },
-  {
-    "source": "exam",
-    "type": "code",
-    "question": "Consider the Employees table and the following sequences:\nCREATE OR REPLACE TRIGGER t_employees\nBEFORE UPDATE OR DELETE ON Employees\nFOR EACH ROW\nWHEN (new.salary<1000)\nBEGIN\n  RAISE_APPLICATION_ERROR (-20100,'Operation forbidden!');\nEND;\n/\nDELETE FROM employees WHERE employee_id=120;\n\nSpecify which of the following statements is true:",
-    "answers": [
-      {
-        "text": "an error occurs because the variable new is not addressed correctly",
-        "isCorrect": false
-      },
-      {
-        "text": "during the delete operation the -20100 exception will occur as a result of executing the trigger",
-        "isCorrect": false
-      },
-      {
-        "text": "the trigger compiles successfully",
-        "isCorrect": true
-      },
-      {
-        "text": "the delete operation will succeed because the trigger never executes in this case",
-        "isCorrect": true
-      },
-      {
-        "text": "the trigger executes for each record in the Employees table",
-        "isCorrect": true
-      }
     ],
-    "explanation": "The trigger compiles and is a row-level trigger (`FOR EACH ROW`), so it is evaluated per affected row. Its `WHEN (new.salary < 1000)` condition references `:new`, which is `NULL` for a `DELETE`, so the condition is never TRUE — the body never runs and the delete succeeds without raising the error.",
-    "id": 39,
-    "annotations": [
-      {
-        "n": 1,
-        "find": "WHEN (new.salary<1000)",
-        "note": "For a DELETE, :new is NULL, so this condition is never TRUE."
-      }
+    "walkthrough": [
+      "The `BEFORE INSERT ... FOR EACH ROW` trigger reads the available stock for the product.",
+      "If the ordered quantity exceeds stock, it caps `:new.quantity` at the available stock.",
+      "It then updates `stock` for that product.",
+      "The `INSERT` and the trigger's `UPDATE` are one transaction, so the following `ROLLBACK` cancels both."
     ]
   },
   {
@@ -1297,13 +1358,19 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "The trigger compiles, but at run time it fails: a `COMMIT` (or `ROLLBACK`) is not allowed inside an ordinary trigger because the trigger runs within the calling transaction (ORA-04092). The `INSERT` cannot be committed independently of the triggering `UPDATE`.",
-    "id": 40,
+    "id": 37,
     "annotations": [
       {
         "n": 1,
         "find": "COMMIT;",
         "note": "Not allowed inside a regular trigger — raises a runtime error (ORA-04092)."
       }
+    ],
+    "walkthrough": [
+      "The trigger compiles successfully.",
+      "The `UPDATE` of department 50 affects 20 rows, firing the row trigger 20 times.",
+      "Each firing reaches `COMMIT`, which is not allowed inside an ordinary trigger (ORA-04092).",
+      "Result: a runtime error — the trigger's work cannot be committed independently of the triggering `UPDATE`."
     ]
   },
   {
@@ -1333,13 +1400,20 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "Start `i = 7`. Each pass first adds 3 then prints: 7+3=`10`, 10+3=`13`, 13+3=`16` (16 < 15 is false, so the loop stops). It displays 10, 13, 16.",
-    "id": 41,
+    "id": 38,
     "annotations": [
       {
         "n": 1,
         "find": "i := i+3",
         "note": "i is increased before each print: 10, 13, 16."
       }
+    ],
+    "walkthrough": [
+      "Start with `i = 7`.",
+      "Pass 1: `i := 7+3 = 10`, prints `10`.",
+      "Pass 2: `i := 10+3 = 13`, prints `13`.",
+      "Pass 3: `i := 13+3 = 16`, prints `16`; now `16 < 15` is false, loop ends.",
+      "Output: `10`, `13`, `16`."
     ]
   },
   {
@@ -1369,13 +1443,19 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "`n` is `'2'` (a string constant). `'2' BETWEEN -1 AND 1` is FALSE and `a` is FALSE, so the first branch fails. The `ELSIF n IS NOT NULL AND NOT a` is TRUE (`n` is not null and `a` is false), so it prints `B`.",
-    "id": 42,
+    "id": 39,
     "annotations": [
       {
         "n": 1,
         "find": "ELSIF n IS NOT NULL AND NOT a THEN",
         "note": "n is not null and a is FALSE, so this branch runs and prints B."
       }
+    ],
+    "walkthrough": [
+      "`n` is the string constant `'2'`; `a` is `FALSE`.",
+      "First branch: `'2' BETWEEN -1 AND 1` is `FALSE` and `a` is `FALSE`, so it is not taken.",
+      "`ELSIF n IS NOT NULL AND NOT a`: `n` is not null and `NOT a` is `TRUE`, so this branch runs.",
+      "Output: `B`."
     ]
   },
   {
@@ -1405,7 +1485,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "A user-defined exception must be declared (in the declarative section) and explicitly raised/invoked (with `RAISE`). It is not required to give it an error code, nor to handle or propagate it.",
-    "id": 43
+    "id": 40
   },
   {
     "source": "exam",
@@ -1434,13 +1514,19 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "An `UPDATE` that matches no row is not an error: it simply affects 0 rows. `SQL%ROWCOUNT` is `0` (a real number, not `NULL`), and the block ends normally — no `NO_DATA_FOUND` (that only comes from `SELECT ... INTO`).",
-    "id": 44,
+    "id": 41,
     "annotations": [
       {
         "n": 1,
         "find": "DBMS_OUTPUT.PUT_LINE(SQL%ROWCOUNT)",
         "note": "No row matched, so SQL%ROWCOUNT is 0; no exception is raised."
       }
+    ],
+    "walkthrough": [
+      "No employee has `employee_id = 1000`, so the `UPDATE` matches no rows.",
+      "Matching no rows is not an error — `SELECT INTO` raises `NO_DATA_FOUND`, but `UPDATE` does not.",
+      "`SQL%ROWCOUNT` is `0` (a real number, not `NULL`).",
+      "Output: `0`, and the block ends normally."
     ]
   },
   {
@@ -1470,7 +1556,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "A package specification can exist without a body (when it only declares constants/variables/cursors and no implementation is needed), but a body cannot exist without a specification — without a spec the body will not compile.",
-    "id": 45
+    "id": 42
   },
   {
     "source": "exam",
@@ -1499,7 +1585,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "A `VARRAY` holds a variable number of elements up to a maximum size fixed when it is defined. It is always dense (never sparse), is indexed from 1 (no negative indexes), supports `TRIM`/`EXTEND` rather than `DELETE(n)` of a single middle element, and can be passed as a parameter.",
-    "id": 46
+    "id": 43
   },
   {
     "source": "exam",
@@ -1528,7 +1614,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "`FORALL` sends all the DML iterations to the SQL engine in one call, dramatically reducing the number of context switches between the PL/SQL engine and the SQL engine — that is its whole purpose.",
-    "id": 47
+    "id": 44
   },
   {
     "source": "exam",
@@ -1557,7 +1643,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "A statement-level trigger (no `FOR EACH ROW`) fires once per triggering DML statement, regardless of how many rows the statement affects (even zero). A row-level trigger fires once per affected row.",
-    "id": 48
+    "id": 45
   },
   {
     "source": "exam",
@@ -1586,7 +1672,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "A context switch happens when the PL/SQL engine hands an embedded SQL statement over to the SQL engine (and back). It is not caused by `IF` branches, `DBMS_OUTPUT`, collection methods, or exceptions by themselves.",
-    "id": 49
+    "id": 46
   },
   {
     "source": "exam",
@@ -1615,7 +1701,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "For a collection, `FIRST` and `LAST` return the first and last *index* (subscript) that is defined — not the element values, not the count, and not the declared maximum size.",
-    "id": 50
+    "id": 47
   },
   {
     "source": "exam",
@@ -1644,13 +1730,19 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "`WHERE sysdate != sysdate` is never TRUE, so the `UPDATE` matches no rows and `SQL%ROWCOUNT` is `0`. No exception occurs, so the `WHEN OTHERS` handler does not run and \"Error\" is not shown.",
-    "id": 51,
+    "id": 48,
     "annotations": [
       {
         "n": 1,
         "find": "WHERE sysdate!=sysdate",
         "note": "Always false, so the UPDATE affects 0 rows; SQL%ROWCOUNT = 0."
       }
+    ],
+    "walkthrough": [
+      "`WHERE sysdate != sysdate` is never true, so the `UPDATE` matches no rows.",
+      "`SQL%ROWCOUNT` is `0`.",
+      "No exception occurs, so the `WHEN OTHERS` handler (which prints `Error`) never runs.",
+      "Output: `0`."
     ]
   },
   {
@@ -1680,7 +1772,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "`I` is `NUMBER(3)`, whose maximum is 999, so `I := 1000` raises `VALUE_ERROR` before the `SELECT`. `VALUE_ERROR` is neither `NO_DATA_FOUND` nor `TOO_MANY_ROWS`, so `WHEN OTHERS` runs and prints \"ANOTHER EXCEPTION OCCURRED\"; inside it, `I := I/0` raises `ZERO_DIVIDE`, caught by the inner handler printing \"WE CANNOT DIVIDE BY ZERO\".",
-    "id": 52,
+    "id": 49,
     "annotations": [
       {
         "n": 1,
@@ -1692,6 +1784,13 @@ window.QUIZ_QUESTIONS = [
         "find": "I:=I/0",
         "note": "In the OTHERS handler, division by zero raises ZERO_DIVIDE."
       }
+    ],
+    "walkthrough": [
+      "`I` is `NUMBER(3)` (max 999), so `I := 1000` raises `VALUE_ERROR` before the `SELECT`.",
+      "`VALUE_ERROR` is neither `NO_DATA_FOUND` nor `TOO_MANY_ROWS`, so `WHEN OTHERS` runs and prints `ANOTHER EXCEPTION OCCURRED`.",
+      "Inside that handler, `I := I/0` raises `ZERO_DIVIDE`.",
+      "The inner handler catches it and prints `WE CANNOT DIVIDE BY ZERO`.",
+      "Output: `ANOTHER EXCEPTION OCCURRED` then `WE CANNOT DIVIDE BY ZERO`."
     ]
   },
   {
@@ -1717,7 +1816,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "This is an `AFTER UPDATE` row trigger, and inside it the line `:NEW.SALARY := :OLD.SALARY` tries to modify `:NEW`. You can only assign to `:NEW` in a `BEFORE` trigger; doing it in an `AFTER` trigger is illegal, so the trigger does not compile.",
-    "id": 53,
+    "id": 50,
     "annotations": [
       {
         "n": 1,
@@ -1729,6 +1828,12 @@ window.QUIZ_QUESTIONS = [
         "find": ":NEW.SALARY:=:OLD.SALARY",
         "note": "Assigning to :NEW is only allowed in a BEFORE trigger — compile error."
       }
+    ],
+    "walkthrough": [
+      "This is an `AFTER UPDATE ... FOR EACH ROW` trigger.",
+      "Its body does `:NEW.SALARY := :OLD.SALARY`, assigning to `:NEW`.",
+      "You may only assign to `:NEW` in a `BEFORE` row trigger; in an `AFTER` trigger the row is already written.",
+      "Result: the trigger does not compile."
     ]
   },
   {
@@ -1758,43 +1863,20 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "This is a searched `CASE` statement with no `ELSE`. `v_grade` is 3, which matches none of the `WHEN` conditions (not 5..10, not NULL, not <1 or >10). A `CASE` statement with no matching branch and no `ELSE` raises the predefined `CASE_NOT_FOUND` (ORA-06592) exception at run time.",
-    "id": 54,
+    "id": 51,
     "annotations": [
       {
         "n": 1,
         "find": "END CASE;",
         "note": "No WHEN matched and there is no ELSE, so CASE_NOT_FOUND is raised here."
       }
-    ]
-  },
-  {
-    "source": "exam",
-    "type": "theory",
-    "question": "Consider the PL/SQL block below. The tables exist, have the referenced columns and at least 10 rows each. Some departments have employees, others do not. (Cursor with RIGHT JOIN, GROUP BY, ORDER BY, LOOP with IF/ELSIF/ELSE, then reopening the cursor with 2 fetches). Which of the following statements are true? The PL/SQL block contains an error and will not compile B) The PL/SQL block will always raise an exception The statement on line 10 will always display \"Number of elements 0\" D) The statement on line 26 can raise the NO_DATA_FOUND exception The statement on line 27 can raise the NO_DATA_FOUND exception",
-    "answers": [
-      {
-        "text": "C) + D)",
-        "isCorrect": false
-      },
-      {
-        "text": "A)",
-        "isCorrect": false
-      },
-      {
-        "text": "C)",
-        "isCorrect": true
-      },
-      {
-        "text": "B)",
-        "isCorrect": false
-      },
-      {
-        "text": "D) + E)",
-        "isCorrect": false
-      }
     ],
-    "explanation": "Only statement C is true. The first count is printed right after `OPEN`, before any `FETCH`, so `c%ROWCOUNT` is always `0`. The block compiles, does not always raise an exception, and the later `FETCH` statements cannot raise `NO_DATA_FOUND` (only `SELECT ... INTO` can).",
-    "id": 55
+    "walkthrough": [
+      "This is a searched `CASE` statement with no `ELSE`.",
+      "`v_grade` is `3`: not between `5` and `10`, not `NULL`, and not `<1 or >10`.",
+      "No `WHEN` matches and there is no `ELSE`, so `CASE_NOT_FOUND` (ORA-06592) is raised.",
+      "Result: an exception is raised at runtime (the `Failed` line is never reached)."
+    ]
   },
   {
     "source": "exam",
@@ -1823,13 +1905,19 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "`SYSDATE + 2/48` adds a fraction of a day (2 of 48 half-hours = 1 hour) to the current date, giving a `DATE` value, so the procedure displays a calendar date/time. The procedure compiles and runs fine.",
-    "id": 56,
+    "id": 52,
     "annotations": [
       {
         "n": 1,
         "find": "SYSDATE+2/48",
         "note": "Date plus a day-fraction is still a DATE, so a date is printed."
       }
+    ],
+    "walkthrough": [
+      "`2/48` of a day equals one hour.",
+      "`SYSDATE + 2/48` is a `DATE` value (date + time), not a number.",
+      "`DBMS_OUTPUT.PUT_LINE` displays that date/time.",
+      "Result: a calendar date is displayed."
     ]
   },
   {
@@ -1859,7 +1947,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "A user-defined exception is one you declare yourself and raise with the `RAISE` statement (or `RAISE_APPLICATION_ERROR`). It can be caught and handled like any exception; it is not a system or connection error.",
-    "id": 57
+    "id": 53
   },
   {
     "source": "exam",
@@ -1888,7 +1976,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "PL/SQL is a procedural programming language (a procedural extension of SQL). It is not a general-purpose/universal language, nor purely a data-description, modeling, or exception-handling language.",
-    "id": 58
+    "id": 54
   },
   {
     "source": "exam",
@@ -1917,13 +2005,19 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "Start `i = 2`. The `WHILE i < 3` test passes once; inside, `i := 4` and one line is printed. On the next test `4 < 3` is false, so the loop ends after a single line.",
-    "id": 59,
+    "id": 55,
     "annotations": [
       {
         "n": 1,
         "find": "i := 4",
         "note": "i jumps to 4, so the next WHILE test (4<3) fails — only one line prints."
       }
+    ],
+    "walkthrough": [
+      "Start with `i = 2`; `WHILE i < 3` is true, so the body runs once.",
+      "Inside, `i := 4` and one line is printed.",
+      "Next test: `4 < 3` is false, so the loop ends.",
+      "Result: exactly one line is displayed."
     ]
   },
   {
@@ -1941,7 +2035,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "False. Only `IN` parameters may have default values. `OUT` (and `IN OUT`) parameters cannot be given defaults.",
-    "id": 60
+    "id": 56
   },
   {
     "source": "exam",
@@ -1970,7 +2064,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "With positional association, the actual and formal parameters must match in number and be given in the same order. Their names may differ, and corresponding parameters must be type-compatible (not of different types).",
-    "id": 61
+    "id": 57
   },
   {
     "source": "exam",
@@ -1987,7 +2081,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "True. A package can consist of just a specification (for example, one that only declares constants, variables, types or cursors), with no body.",
-    "id": 62
+    "id": 58
   },
   {
     "source": "exam",
@@ -2004,7 +2098,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "True. As long as the specification (the public interface) stays the same, you can recompile the package body alone — that is exactly why the spec/body split exists.",
-    "id": 63
+    "id": 59
   },
   {
     "source": "exam",
@@ -2021,7 +2115,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "True. You can define your own function with the same name as a built-in; within your schema/package your version is used (and overloading by parameter list is allowed).",
-    "id": 64
+    "id": 60
   },
   {
     "source": "exam",
@@ -2046,7 +2140,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "Declaring a subprogram in the specification but never implementing it in the body is an error (the body will not compile) — so that direction is False. The reverse is fine: a subprogram defined only in the body (not in the spec) is simply a private subprogram — so that direction is True.",
-    "id": 65
+    "id": 61
   },
   {
     "source": "exam",
@@ -2075,13 +2169,19 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "No DML statement has run in this block, so the implicit-cursor attribute `SQL%FOUND` is `NULL`. `IF NULL` is not TRUE, so control falls to the `ELSE` and prints `1`.",
-    "id": 66,
+    "id": 62,
     "annotations": [
       {
         "n": 1,
         "find": "IF sql%found THEN",
         "note": "No prior DML, so SQL%FOUND is NULL → not TRUE → ELSE runs."
       }
+    ],
+    "walkthrough": [
+      "No DML statement has run in this block.",
+      "With no prior SQL statement, `SQL%FOUND` is `NULL`.",
+      "`IF NULL` is not `TRUE`, so control falls to the `ELSE`.",
+      "Output: `1`."
     ]
   },
   {
@@ -2111,7 +2211,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "A function returns a value, so it must be called where a value is expected: inside `DBMS_OUTPUT.PUT_LINE(...)` via `EXECUTE`, assigned to a variable in a block, or used in a `SELECT`. `EXECUTE show_salary(100)` and `CALL show_salary(100)` are invalid because there is nowhere to put the returned value (`CALL` would need an `INTO` host variable).",
-    "id": 67
+    "id": 63
   },
   {
     "source": "exam",
@@ -2140,7 +2240,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "The functions of a DBMS are data description and data administration (B + D). \"Program definition\", \"program manipulation\" and \"use of the information system\" are not DBMS functions.",
-    "id": 69
+    "id": 64
   },
   {
     "source": "exam",
@@ -2169,7 +2269,24 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "A + B + C: it creates a subprogram (a procedure), the procedure receives an `OUT` parameter, and its body uses the group function `AVG`. There is no error — a procedure needs no `RETURN`, and the `SELECT ... INTO` is well formed.",
-    "id": 70
+    "id": 65,
+    "annotations": [
+      {
+        "n": 1,
+        "find": "p_avg_sal OUT NUMBER",
+        "note": "An `OUT` parameter — the procedure can write to it, which is what lets the `SELECT INTO` succeed."
+      },
+      {
+        "n": 2,
+        "find": "AVG(salary)",
+        "note": "A group (aggregate) function, used here inside a SQL statement in the procedure body."
+      },
+      {
+        "n": 3,
+        "find": "INTO p_avg_sal",
+        "note": "Valid single-row `SELECT INTO`; a procedure needs no `RETURN` to give back a value."
+      }
+    ]
   },
   {
     "source": "exam",
@@ -2198,36 +2315,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "`%TYPE` is used in a declaration to give a variable the same data type as an existing column or variable (e.g. `v_sal employees.salary%TYPE`). It anchors the type only — it does not copy a value, and it is not limited to parameters.",
-    "id": 71
-  },
-  {
-    "source": "exam",
-    "type": "theory",
-    "question": "Consider the following PL/SQL block (code with SQL statements inside a PL/SQL block). Which of the following statements are correct:",
-    "answers": [
-      {
-        "text": "the too_many_rows exception may occur",
-        "isCorrect": false
-      },
-      {
-        "text": "the ROLLBACK command is allowed in a PL/SQL block",
-        "isCorrect": true
-      },
-      {
-        "text": "the error message is displayed",
-        "isCorrect": false
-      },
-      {
-        "text": "the block executes without errors",
-        "isCorrect": true
-      },
-      {
-        "text": "the UPDATE command is not allowed in a PL/SQL block",
-        "isCorrect": false
-      }
-    ],
-    "explanation": "The block executes without errors: `ROLLBACK` and `UPDATE` are both allowed in a PL/SQL block. A single-row context here does not raise `TOO_MANY_ROWS`, and no error message is shown.",
-    "id": 72
+    "id": 66
   },
   {
     "source": "exam",
@@ -2256,7 +2344,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "`Y` is never initialised, so it is `NULL`; `X <> Y` evaluates to `NULL` (not TRUE), so the `THEN` branch is never taken and nothing would print. On top of that, `a` is not declared in the block, so the block actually fails to compile — either way it displays nothing useful.",
-    "id": 73,
+    "id": 67,
     "annotations": [
       {
         "n": 1,
@@ -2268,6 +2356,12 @@ window.QUIZ_QUESTIONS = [
         "find": "a('test')",
         "note": "a is not declared, so this is a compile error."
       }
+    ],
+    "walkthrough": [
+      "`Y` is never initialised, so it is `NULL`; `X <> Y` evaluates to `NULL`, not `TRUE`, so the `THEN` is not taken.",
+      "Also `a` is not declared anywhere in the block.",
+      "That undefined reference makes the block fail to compile.",
+      "Result: an error — and in any case nothing is displayed."
     ]
   },
   {
@@ -2297,7 +2391,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "Anonymous blocks are not stored in the database — they are compiled and run on the spot. Procedures, functions, packages and triggers are stored (named) objects.",
-    "id": 74
+    "id": 68
   },
   {
     "source": "exam",
@@ -2326,7 +2420,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "`GRANT` is a DCL/DDL command, which cannot run directly in a PL/SQL block — it requires `EXECUTE IMMEDIATE`. `INSERT`, `SELECT`, `ROLLBACK` and `SAVEPOINT` can be used directly.",
-    "id": 75
+    "id": 69
   },
   {
     "source": "exam",
@@ -2355,13 +2449,19 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "An error occurs: `p_avg_sal` is declared `IN`, which is read-only inside the procedure, so `SELECT AVG(salary) INTO p_avg_sal` cannot assign to it. It would need to be an `OUT` (or `IN OUT`) parameter.",
-    "id": 76,
+    "id": 70,
     "annotations": [
       {
         "n": 1,
         "find": "p_avg_sal IN NUMBER",
         "note": "IN parameters are read-only — you cannot SELECT INTO them."
       }
+    ],
+    "walkthrough": [
+      "`p_avg_sal` is declared `IN`, which is read-only inside the procedure.",
+      "`SELECT AVG(salary) INTO p_avg_sal` tries to assign to that read-only parameter.",
+      "This is illegal, so an error occurs.",
+      "Fix: declare the parameter `OUT` (or `IN OUT`)."
     ]
   },
   {
@@ -2391,7 +2491,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "`v_rez := sp_nr(2800)` assigns the result of `sp_nr(2800)` to a variable, so `sp_nr` must be a *function* (it returns a value). A procedure could not be used on the right-hand side of an assignment.",
-    "id": 77,
+    "id": 71,
     "annotations": [
       {
         "n": 1,
@@ -2399,35 +2499,6 @@ window.QUIZ_QUESTIONS = [
         "note": "Used on the right of := , so sp_nr returns a value — it is a function."
       }
     ]
-  },
-  {
-    "source": "exam",
-    "type": "theory",
-    "question": "Consider the following PL/SQL block (an explicit cursor over employees, opened and fetched once, with no loop). Which of the following statements are correct:",
-    "answers": [
-      {
-        "text": "it declares two scalar variables",
-        "isCorrect": false
-      },
-      {
-        "text": "the block displays nothing",
-        "isCorrect": true
-      },
-      {
-        "text": "it uses an implicit cursor",
-        "isCorrect": false
-      },
-      {
-        "text": "it generates an error",
-        "isCorrect": false
-      },
-      {
-        "text": "it declares an explicit cursor",
-        "isCorrect": true
-      }
-    ],
-    "explanation": "The block declares an explicit cursor and opens/fetches once with no loop and no output statement, so it simply displays nothing. It does not use an implicit cursor and does not raise an error.",
-    "id": 78
   },
   {
     "source": "exam",
@@ -2456,13 +2527,19 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "A group function like `SUM` always returns exactly one row, even when no underlying rows match — in that case it returns `NULL`. So `x` becomes `NULL` and no `NO_DATA_FOUND` is raised.",
-    "id": 79,
+    "id": 72,
     "annotations": [
       {
         "n": 1,
         "find": "SELECT sum(salary) INTO x FROM employees WHERE department_id = 1500",
         "note": "SUM over zero rows returns one row holding NULL — no NO_DATA_FOUND."
       }
+    ],
+    "walkthrough": [
+      "Department `1500` does not exist, so no employee rows match.",
+      "But `SUM(salary)` is a group function — it always returns exactly one row.",
+      "With no matching rows that single row is `NULL`, so no `NO_DATA_FOUND` is raised.",
+      "Result: `x` is `NULL`."
     ]
   },
   {
@@ -2492,7 +2569,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "A block label lets you qualify (prefix) names with the block label, so you can reach a variable that would otherwise be hidden by an inner declaration (e.g. `outer_block.v`). It does not store the block in the database and is not mandatory for nesting.",
-    "id": 80
+    "id": 73
   },
   {
     "source": "exam",
@@ -2521,7 +2598,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "Triggers fire automatically on one or more DML (update) operations on a table/view. They are not limited to physical tables only, are not about connection events, and they can contain a `DECLARE` section.",
-    "id": 81
+    "id": 74
   },
   {
     "source": "exam",
@@ -2550,7 +2627,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "When declaring a variable you must specify its data type. Initialising it, marking it constant, or declaring nullability are optional.",
-    "id": 82
+    "id": 75
   },
   {
     "source": "exam",
@@ -2579,7 +2656,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "This declares one parameterized cursor `c(p_id, p_id1)` and runs it twice via two cursor `FOR` loops with different arguments — `c(20, 2000)` and `c(30, 3000)`. It is not two cursors and needs no nesting.",
-    "id": 83,
+    "id": 76,
     "annotations": [
       {
         "n": 1,
@@ -2591,6 +2668,12 @@ window.QUIZ_QUESTIONS = [
         "find": "FOR r IN c(30, 3000) LOOP",
         "note": "...reused here with different arguments — executed a second time."
       }
+    ],
+    "walkthrough": [
+      "One parameterized cursor `c(p_id, p_id1)` is declared.",
+      "The first cursor `FOR` loop opens it with `c(20, 2000)` and lists matching rows.",
+      "The second cursor `FOR` loop opens the same cursor with `c(30, 3000)`.",
+      "Result: one 2-parameter cursor is executed twice — no nesting and no error."
     ]
   },
   {
@@ -2620,13 +2703,19 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "This is a valid `BEFORE INSERT ... FOR EACH ROW` trigger that fills `:new.product_id` from a sequence. Inside the `WHEN` clause you reference `new` *without* a colon (`WHEN (new.product_id > 3000)`), which is correct, so the trigger is created and will fire.",
-    "id": 84,
+    "id": 77,
     "annotations": [
       {
         "n": 1,
         "find": "WHEN (new.product_id > 3000)",
         "note": "Inside WHEN you use new without a colon — this is correct."
       }
+    ],
+    "walkthrough": [
+      "`BEFORE INSERT ... FOR EACH ROW` lets the trigger set `:new` before the row is stored.",
+      "Inside the `WHEN` clause, `new` is written without a colon — `WHEN (new.product_id > 3000)` — which is correct.",
+      "The body fills `:new.product_id` from `seq.nextval`.",
+      "Result: the trigger is created successfully and will fire."
     ]
   },
   {
@@ -2656,7 +2745,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "On an INDEX BY (associative array) you can use `FIRST`, `DELETE`, `EXISTS`, etc. `PREVIOUS` is not a valid method name (the method is `PRIOR`), and `ROWCOUNT` is a *cursor* attribute, not a collection method — so neither can be used.",
-    "id": 85
+    "id": 78
   },
   {
     "source": "exam",
@@ -2685,7 +2774,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "The executable section, `BEGIN ... END`, is the only mandatory part of a PL/SQL block. `DECLARE` and `EXCEPTION` are optional, and `EXECUTE`/`EXECUTE IMMEDIATE` are not block sections.",
-    "id": 86
+    "id": 79
   },
   {
     "source": "exam",
@@ -2714,7 +2803,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "A non-predefined (user-defined) exception must be declared. It does not have to be handled or propagated, and you are not required to assign it a custom error code.",
-    "id": 87
+    "id": 80
   },
   {
     "source": "exam",
@@ -2743,7 +2832,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "`%ROWTYPE` defines a record variable with the same structure (field names, types and order) as a row of a table or the result of a cursor — e.g. `emp_rec employees%ROWTYPE`.",
-    "id": 88
+    "id": 81
   },
   {
     "source": "seminar",
@@ -2768,7 +2857,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "The executable section (`BEGIN ... END`) is the only mandatory section. `DECLARE` and `EXCEPTION` are optional.",
-    "id": 89
+    "id": 82
   },
   {
     "source": "seminar",
@@ -2797,7 +2886,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "DDL such as `CREATE TABLE` and `ALTER TABLE`, and DCL such as `GRANT`, cannot be written directly in a PL/SQL block — they require `EXECUTE IMMEDIATE`. `UPDATE` (DML) and `COMMIT` (transaction control) are allowed directly.",
-    "id": 90
+    "id": 83
   },
   {
     "source": "seminar",
@@ -2822,7 +2911,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "The most common cause is that `SET SERVEROUTPUT ON` was not run in the session, so the output buffer is not displayed. `DBMS_OUTPUT` works in anonymous blocks too, and no `COMMIT` is needed to see output.",
-    "id": 91
+    "id": 84
   },
   {
     "source": "seminar",
@@ -2847,7 +2936,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "To pick the larger of two PL/SQL values use the single-row function `GREATEST()` (and `LEAST()` for the smaller). `MAX()`/`MIN()` are group functions and only work inside SQL statements.",
-    "id": 92
+    "id": 85
   },
   {
     "source": "seminar",
@@ -2872,7 +2961,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "`employees.salary%TYPE` anchors the variable to the exact data type of that column, so if the column's type changes the variable adapts automatically. It does not copy the column's value, does not make a record, and does not make a constant.",
-    "id": 93
+    "id": 86
   },
   {
     "source": "seminar",
@@ -2901,7 +2990,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "A `SELECT ... INTO` must return exactly one row: zero rows raises `NO_DATA_FOUND`, more than one raises `TOO_MANY_ROWS` (it never silently keeps the first). It can fill several variables at once, one per selected column.",
-    "id": 94
+    "id": 87
   },
   {
     "source": "seminar",
@@ -2926,7 +3015,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "A bind/host variable is referenced inside PL/SQL by prefixing its name with a colon: `:g_price`. The ampersand (`&`) is for SQL*Plus substitution variables, not bind variables.",
-    "id": 95
+    "id": 88
   },
   {
     "source": "seminar",
@@ -2951,7 +3040,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "The outer `var` is set to 1 and printed (`1`). The inner block declares its *own* `var` set to 2 and prints it (`2`). After the inner block ends, that inner `var` is gone and the outer `var` (still 1) is printed (`1`). Output: 1, 2, 1.",
-    "id": 96,
+    "id": 89,
     "annotations": [
       {
         "n": 1,
@@ -2963,6 +3052,13 @@ window.QUIZ_QUESTIONS = [
         "find": "  DBMS_OUTPUT.PUT_LINE(var);\nEND;",
         "note": "Back in the outer scope: the outer var is still 1."
       }
+    ],
+    "walkthrough": [
+      "Outer `var := 1`; the first `PUT_LINE` prints `1`.",
+      "The inner block declares its own `var := 2`; its `PUT_LINE` prints `2`.",
+      "After the inner block ends, its `var` is gone and the outer `var` (still `1`) is in scope.",
+      "The last `PUT_LINE` prints `1`.",
+      "Output: `1, 2, 1`."
     ]
   },
   {
@@ -2988,7 +3084,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "A `CONSTANT` or a `NOT NULL` variable must be given a value in its own declaration, because it can never legitimately hold `NULL` (and a constant can never be assigned later).",
-    "id": 97
+    "id": 90
   },
   {
     "source": "seminar",
@@ -3013,7 +3109,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "The correct keyword is `ELSIF` (one word, no second E). `ELSEIF`, `ELSE IF` and `ELIF` are not valid PL/SQL.",
-    "id": 98
+    "id": 91
   },
   {
     "source": "seminar",
@@ -3038,7 +3134,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "Comparing with a `NULL` yields `NULL`, which is not TRUE, so the `IF` does not take the `THEN` branch and the `ELSE` runs. No exception is raised — `NULL` is simply not treated as 0 or FALSE here.",
-    "id": 99
+    "id": 92
   },
   {
     "source": "seminar",
@@ -3063,7 +3159,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "A `CASE` *expression* returns a value and ends with `END`; a `CASE` *statement* runs statements and ends with `END CASE;`. A `CASE` statement with no matching `WHEN` and no `ELSE` raises `CASE_NOT_FOUND`. The two forms are not interchangeable.",
-    "id": 100
+    "id": 93
   },
   {
     "source": "seminar",
@@ -3088,7 +3184,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "In a numeric `FOR` loop the counter is declared implicitly, is an integer, and exists only inside the loop. You cannot assign to it, and it is not accessible after the loop ends.",
-    "id": 101
+    "id": 94
   },
   {
     "source": "seminar",
@@ -3113,7 +3209,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "The basic `LOOP ... EXIT WHEN ... END LOOP` always runs its body at least once, because the exit test is checked *after* the body. `WHILE` and `FOR` loops test before running, so their body may run zero times.",
-    "id": 102
+    "id": 95
   },
   {
     "source": "seminar",
@@ -3138,7 +3234,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "`:=` is the assignment operator (store a value into a variable) and `=` is the equality/comparison operator (used in conditions). They are not interchangeable.",
-    "id": 103
+    "id": 96
   },
   {
     "source": "seminar",
@@ -3163,7 +3259,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "`departments%ROWTYPE` creates a record whose fields match the names, data types and order of the `departments` table's columns. It is not a scalar, a collection, or a cursor.",
-    "id": 104
+    "id": 97
   },
   {
     "source": "seminar",
@@ -3184,7 +3280,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "Nested tables and `VARRAY`s can be used as column types and stored in the database. Index-by tables (associative arrays) exist only in PL/SQL memory and cannot be stored in a table.",
-    "id": 105
+    "id": 98
   },
   {
     "source": "seminar",
@@ -3209,7 +3305,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "A `VARRAY` is always dense (no gaps) and has a fixed maximum size set at definition. Associative arrays and nested tables can be sparse, and a `%ROWTYPE` is a record, not a collection.",
-    "id": 106
+    "id": 99
   },
   {
     "source": "seminar",
@@ -3234,7 +3330,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "Associative arrays can be sparse (keys need not be contiguous), so when looping from `.FIRST` to `.LAST` some indexes in between may not exist; reading a missing index raises `NO_DATA_FOUND`, so you guard each access with `EXISTS(i)`.",
-    "id": 107
+    "id": 100
   },
   {
     "source": "seminar",
@@ -3259,7 +3355,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "Indexes can be any `PLS_INTEGER`, including negatives. Four keys are assigned, so `COUNT` is `4`. `FIRST` returns the lowest index (`-100`) and `LAST` the highest (`500000000`). The count is the number of elements, not the index range.",
-    "id": 108,
+    "id": 101,
     "annotations": [
       {
         "n": 1,
@@ -3271,6 +3367,12 @@ window.QUIZ_QUESTIONS = [
         "find": "DBMS_OUTPUT.PUT_LINE(v_client.FIRST)",
         "note": "FIRST is the smallest index = -100; LAST is the largest = 500000000."
       }
+    ],
+    "walkthrough": [
+      "Four keys are assigned (`-100`, `5`, `999`, `500000000`), so `COUNT` is `4`.",
+      "Associative-array indexes may be any `PLS_INTEGER`, including negatives.",
+      "`FIRST` returns the lowest index, `-100`; `LAST` returns the highest, `500000000`.",
+      "Output: `4`, then `-100`, then `500000000`."
     ]
   },
   {
@@ -3296,7 +3398,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "The manual lifecycle of an explicit cursor is: `DECLARE` it, `OPEN` it, `FETCH` rows from it, then `CLOSE` it.",
-    "id": 109
+    "id": 102
   },
   {
     "source": "seminar",
@@ -3321,7 +3423,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "`EXIT WHEN c%NOTFOUND;` goes immediately after the `FETCH`. The `FETCH` past the last row leaves the record unchanged and sets `%NOTFOUND` to TRUE; exiting right away avoids processing that last row a second time.",
-    "id": 110
+    "id": 103
   },
   {
     "source": "seminar",
@@ -3350,7 +3452,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "In a cursor `FOR` loop Oracle automatically opens the cursor, fetches each row, closes the cursor at the end, and creates the loop record variable. You still have to declare the cursor itself.",
-    "id": 111
+    "id": 104
   },
   {
     "source": "seminar",
@@ -3375,7 +3477,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "`WHERE CURRENT OF cursor_name` lets an `UPDATE`/`DELETE` act on the exact row the cursor last fetched. The cursor must be declared `FOR UPDATE` so that row is locked.",
-    "id": 112
+    "id": 105
   },
   {
     "source": "seminar",
@@ -3400,7 +3502,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "No row matches `product_id = 113`, so the `UPDATE` affects 0 rows: `SQL%NOTFOUND` is TRUE, so it prints \"The product 113 doesn't exist\", then `SQL%ROWCOUNT` is `0`, so it prints \"0 rows were modified.\" An `UPDATE` with no match does not raise `NO_DATA_FOUND`.",
-    "id": 113,
+    "id": 106,
     "annotations": [
       {
         "n": 1,
@@ -3412,6 +3514,12 @@ window.QUIZ_QUESTIONS = [
         "find": "SQL%ROWCOUNT || ' rows were modified.'",
         "note": "SQL%ROWCOUNT is 0."
       }
+    ],
+    "walkthrough": [
+      "No row has `product_id = 113`, so the `UPDATE` affects 0 rows.",
+      "`SQL%NOTFOUND` is `TRUE`, so it prints `The product 113 doesn't exist`.",
+      "`SQL%ROWCOUNT` is `0`, so it prints `0 rows were modified.`",
+      "An `UPDATE` with no match does not raise `NO_DATA_FOUND`."
     ]
   },
   {
@@ -3437,7 +3545,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "`BULK COLLECT` runs a query and loads its entire result set into a PL/SQL collection in a single fetch, instead of one row at a time — far fewer context switches.",
-    "id": 114
+    "id": 107
   },
   {
     "source": "seminar",
@@ -3462,7 +3570,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "For a possibly sparse collection, walk it by index with `i := coll.FIRST; WHILE i IS NOT NULL LOOP ... i := coll.NEXT(i); END LOOP;`. A numeric `FOR` over `1..COUNT` or `FIRST..LAST` would hit non-existent indexes and fail.",
-    "id": 115
+    "id": 108
   },
   {
     "source": "seminar",
@@ -3487,7 +3595,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "To bound memory, fetch in batches with a `LIMIT`, e.g. `FETCH cur BULK COLLECT INTO coll LIMIT 1000;` inside a loop. Committing per row or shrinking the collection to size 1 would defeat the performance benefit.",
-    "id": 116
+    "id": 109
   },
   {
     "source": "seminar",
@@ -3512,7 +3620,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "`TRIM(n)` removes `n` elements from the *end* of a `VARRAY` or nested table. It does not remove from the front, does not target NULLs, and is not used on associative arrays.",
-    "id": 117
+    "id": 110
   },
   {
     "source": "seminar",
@@ -3537,7 +3645,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "`NO_DATA_FOUND`, `TOO_MANY_ROWS` and `ZERO_DIVIDE` are Oracle predefined exceptions you can catch without declaring them. \"INSUFFICIENT_CREDIT\" is a business rule, so it would be a user-defined exception.",
-    "id": 118
+    "id": 111
   },
   {
     "source": "seminar",
@@ -3562,7 +3670,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "For a standard ORA- error that has no predefined name, declare your own exception and link it to the error number with `PRAGMA EXCEPTION_INIT(my_exc, -nnnnn)`, then catch it by that name.",
-    "id": 119
+    "id": 112
   },
   {
     "source": "seminar",
@@ -3587,7 +3695,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "In `RAISE_APPLICATION_ERROR`, the custom error number must be in the range `-20000` to `-20999` (these are reserved for user-defined application errors).",
-    "id": 120
+    "id": 113
   },
   {
     "source": "seminar",
@@ -3612,7 +3720,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "`WHEN OTHERS` must be the last handler in the `EXCEPTION` section. As a catch-all it would otherwise intercept errors before the specific handlers had a chance to run.",
-    "id": 121
+    "id": 114
   },
   {
     "source": "seminar",
@@ -3637,7 +3745,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "An unhandled error in an inner block propagates (\"bubbles up\") to the enclosing block's `EXCEPTION` section; if it is unhandled there too, it propagates further and ultimately fails the program. It is not silently ignored.",
-    "id": 122
+    "id": 115
   },
   {
     "source": "seminar",
@@ -3662,7 +3770,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "`IN` is the default and is read-only inside the subprogram; `OUT` writes a value back to the caller; `IN OUT` passes a value in, allows changing it, and returns it. An `OUT` parameter's incoming value is not available to read (it starts as NULL).",
-    "id": 123
+    "id": 116
   },
   {
     "source": "seminar",
@@ -3687,7 +3795,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "A function declares a `RETURN` type and must execute a `RETURN` that yields a value; a procedure does not return a value through `RETURN`. Both can have parameters and contain SQL, and neither has to be inside a package.",
-    "id": 124
+    "id": 117
   },
   {
     "source": "seminar",
@@ -3712,7 +3820,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "To be callable from a SQL `SELECT`, a user-defined function must have only `IN` parameters (no `OUT`/`IN OUT`). It does not need to be in a trigger or to return BOOLEAN (in fact BOOLEAN is not a SQL type).",
-    "id": 125
+    "id": 118
   },
   {
     "source": "seminar",
@@ -3737,7 +3845,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "After a \"created with compilation errors\" warning, run `SHOW ERRORS;` (in SQL*Plus/SQL Developer) to list the exact line numbers and messages.",
-    "id": 126
+    "id": 119
   },
   {
     "source": "seminar",
@@ -3762,7 +3870,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "A package specification is the public interface where subprograms are declared; the body holds the implementations and may contain private subprograms hidden from outside callers; and the specification must be compiled before the body. A body cannot exist without a specification.",
-    "id": 127
+    "id": 120
   },
   {
     "source": "seminar",
@@ -3787,7 +3895,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "Overloading means defining several subprograms with the same name but different parameter lists; it is allowed inside a package (and in a block), but not for two standalone schema-level procedures with the same name.",
-    "id": 128
+    "id": 121
   },
   {
     "source": "seminar",
@@ -3812,7 +3920,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "For an `UPDATE` of 50 rows, the statement-level trigger `t_stmt` (no `FOR EACH ROW`) fires once, while the row-level trigger `t_row` (`FOR EACH ROW`) fires once per affected row = 50 times.",
-    "id": 129,
+    "id": 122,
     "annotations": [
       {
         "n": 1,
@@ -3824,6 +3932,12 @@ window.QUIZ_QUESTIONS = [
         "find": "FOR EACH ROW",
         "note": "Row-level: fires once per affected row (50 times)."
       }
+    ],
+    "walkthrough": [
+      "The `UPDATE` modifies 50 rows.",
+      "`t_stmt` has no `FOR EACH ROW`, so it is a statement trigger: it fires once.",
+      "`t_row` has `FOR EACH ROW`, so it fires once per affected row: 50 times.",
+      "Result: `t_stmt` once, `t_row` 50 times."
     ]
   },
   {
@@ -3849,7 +3963,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "The \"mutating table\" error happens when a row-level trigger tries to `SELECT` from (or modify) the very table whose change fired it, while that table is still being modified — Oracle blocks it to keep results consistent.",
-    "id": 130
+    "id": 123
   },
   {
     "source": "seminar",
@@ -3874,7 +3988,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "Inside a trigger that handles several events you can test the boolean predicates `INSERTING`, `UPDATING` and `DELETING` to tell which DML fired it. There is no `SELECTING` predicate (DML triggers do not fire on SELECT).",
-    "id": 131
+    "id": 124
   },
   {
     "source": "seminar",
@@ -3899,7 +4013,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "Before identity columns, auto-increment keys were built with a `SEQUENCE` (to generate unique numbers) plus a `BEFORE INSERT ... FOR EACH ROW` trigger that put `seq.NEXTVAL` into the key column. Oracle has no `AUTO_INCREMENT` keyword.",
-    "id": 132
+    "id": 125
   },
   {
     "source": "seminar",
@@ -3924,7 +4038,7 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "Calling `orders_pkg.count_cust(res)` fails: `count_cust` is declared only in the package body, so it is private and not exposed in the specification — outside callers cannot see it. Only subprograms declared in the spec are public.",
-    "id": 133
+    "id": 126
   },
   {
     "source": "seminar",
@@ -3949,7 +4063,424 @@ window.QUIZ_QUESTIONS = [
       }
     ],
     "explanation": "A package body's initialization block (the unnamed `BEGIN ... END` at the end of the body) runs once per session, the first time the package is referenced — not on every call and not at compile time.",
+    "id": 127
+  },
+  {
+    "source": "exam",
+    "type": "theory",
+    "category": "past_exam",
+    "question": "The attributes of an explicit cursor are:",
+    "answers": [
+      {
+        "text": "ROWCOUNT, NO_DATA_FOUND, ISOPEN",
+        "isCorrect": false
+      },
+      {
+        "text": "ROWNUM, NOTFOUND, FOUND",
+        "isCorrect": false
+      },
+      {
+        "text": "ISOPEN, NOTFOUND, ROWCOUNT",
+        "isCorrect": true
+      },
+      {
+        "text": "FETCH, CLOSE, OPEN",
+        "isCorrect": false
+      },
+      {
+        "text": "ISCLOSE, FOUND, ROWCOUNT",
+        "isCorrect": false
+      }
+    ],
+    "explanation": "An explicit cursor has exactly four attributes: `%ISOPEN`, `%FOUND`, `%NOTFOUND` and `%ROWCOUNT`. Only that option lists valid ones. `NO_DATA_FOUND` is a predefined exception (not a cursor attribute), `ROWNUM` is a SQL pseudocolumn, `ISCLOSE` does not exist, and `OPEN`/`FETCH`/`CLOSE` are statements.",
+    "id": 128
+  },
+  {
+    "source": "exam",
+    "type": "theory",
+    "category": "past_exam",
+    "question": "Specify which of the following statements about a DBMS are true:",
+    "answers": [
+      {
+        "text": "A DBMS is a set of interconnected elements that contribute to building and operating a database application.",
+        "isCorrect": true
+      },
+      {
+        "text": "One of the objectives of a DBMS is to ensure the logical and physical independence of data.",
+        "isCorrect": true
+      },
+      {
+        "text": "The component architecture of a DBMS consists of: kernel, database and tools.",
+        "isCorrect": false
+      },
+      {
+        "text": "The basic functions of a DBMS are: ensuring minimal and controlled redundancy, data manipulation, data shareability, optimization.",
+        "isCorrect": false
+      },
+      {
+        "text": "A DBMS has as its objective ensuring the global performance of the application and the shareability of computing resources.",
+        "isCorrect": false
+      }
+    ],
+    "explanation": "A DBMS is a set of interconnected components that support building and operating a database application, and one of its central goals is logical and physical data independence — applications are insulated from changes in the logical or physical structure of the data.",
+    "id": 129
+  },
+  {
+    "source": "exam",
+    "type": "theory",
+    "category": "past_exam",
+    "question": "Among the roles of a DBMS are:",
+    "answers": [
+      {
+        "text": "defining the database structure according to a data model",
+        "isCorrect": true
+      },
+      {
+        "text": "data manipulation",
+        "isCorrect": true
+      },
+      {
+        "text": "ensuring the security of the database",
+        "isCorrect": true
+      },
+      {
+        "text": "managing the resources of the computer system",
+        "isCorrect": false
+      },
+      {
+        "text": "optimizing space and computing resources",
+        "isCorrect": false
+      }
+    ],
+    "explanation": "The roles of a DBMS include defining the database structure according to a data model, manipulating the data, and enforcing database security. Managing the computer system's resources and optimizing physical space are responsibilities of the operating system, not the DBMS.",
+    "id": 130
+  },
+  {
+    "source": "exam",
+    "type": "code",
+    "category": "past_exam",
+    "question": "Consider the following PL/SQL block:\nCode:\nSET SERVEROUTPUT ON\nDECLARE\n  CURSOR cursor1 IS SELECT employee_id, last_name FROM employees ORDER BY salary DESC;\n  vid employees.employee_id%TYPE;\n  vname CHAR(20);\nBEGIN\n  OPEN cursor1;\n  FETCH cursor1 INTO vid, vname;\n  DBMS_OUTPUT.PUT_LINE('Employee '||vname);\n  CLOSE cursor1;\nEND;\n/\nWhich of the following statements are correct:",
+    "answers": [
+      {
+        "text": "it displays the name of the employee with the highest salary",
+        "isCorrect": true
+      },
+      {
+        "text": "it works with an explicit cursor",
+        "isCorrect": true
+      },
+      {
+        "text": "it declares two scalar variables",
+        "isCorrect": true
+      },
+      {
+        "text": "it works with an implicit cursor",
+        "isCorrect": false
+      },
+      {
+        "text": "the PL/SQL block is erroneous because the loop structure is missing",
+        "isCorrect": false
+      }
+    ],
+    "explanation": "The block uses an explicit cursor whose query is ordered by `salary DESC`, so the single `FETCH` reads the first row — the highest-paid employee — and prints that name. It declares two scalar variables (`vid` and `vname`). A single fetch needs no loop, and the cursor is explicit, not implicit.",
+    "annotations": [
+      {
+        "n": 1,
+        "find": "ORDER BY salary DESC",
+        "note": "Sorts so the highest salary is the first row; the single FETCH reads that top row."
+      },
+      {
+        "n": 2,
+        "find": "FETCH cursor1 INTO vid, vname;",
+        "note": "Only one row is fetched, so only the top-salary employee is shown."
+      },
+      {
+        "n": 3,
+        "find": "vid employees.employee_id%TYPE;",
+        "note": "First of two scalar variables declared (`vid`, `vname`)."
+      }
+    ],
+    "walkthrough": [
+      "The cursor query is `ORDER BY salary DESC`, so row 1 is the highest-paid employee.",
+      "`OPEN` then a single `FETCH` reads that first row into `vid`, `vname`.",
+      "It prints that one name; `CLOSE` releases the cursor.",
+      "Output: the name of the highest-salary employee."
+    ],
+    "id": 131
+  },
+  {
+    "source": "exam",
+    "type": "code",
+    "category": "past_exam",
+    "question": "What does the following PL/SQL block display?\nCode:\nset serveroutput on;\ndeclare\n  type t_nt is table of number;\n  v_nt t_nt := t_nt(10, 20, 30, 40);\n  v_exists varchar2(3);\nbegin\n  v_nt.delete(2);\n  if v_nt.exists(2) then\n    v_exists := 'YES';\n  else\n    v_exists := 'NO';\n  end if;\n  dbms_output.put_line(v_nt.count || '-' || v_nt.first || '-' || v_nt.last || '-' || v_exists);\nend;",
+    "answers": [
+      {
+        "text": "3-1-4-NO",
+        "isCorrect": true
+      },
+      {
+        "text": "Raises NO_DATA_FOUND",
+        "isCorrect": false
+      },
+      {
+        "text": "3-1-3-NO",
+        "isCorrect": false
+      },
+      {
+        "text": "4-1-4-NO",
+        "isCorrect": false
+      },
+      {
+        "text": "4-1-4-YES",
+        "isCorrect": false
+      }
+    ],
+    "explanation": "The nested table starts with 4 elements at indexes 1..4. `delete(2)` removes index 2, leaving indexes 1, 3, 4 — so `COUNT` is `3`, `FIRST` is `1`, `LAST` is `4`. `exists(2)` is now `FALSE`, so `v_exists` is `NO`. `DELETE` leaves a gap and does not renumber, so `LAST` stays `4`. Output: `3-1-4-NO`.",
+    "annotations": [
+      {
+        "n": 1,
+        "find": "v_nt.delete(2);",
+        "note": "Removes the element at index 2, leaving a gap (indexes 1, 3, 4)."
+      },
+      {
+        "n": 2,
+        "find": "v_nt.exists(2)",
+        "note": "Index 2 no longer exists, so this is FALSE -> `NO`."
+      },
+      {
+        "n": 3,
+        "find": "v_nt.count || '-' || v_nt.first || '-' || v_nt.last",
+        "note": "COUNT=3, FIRST=1, LAST=4 (the gap does not change FIRST/LAST)."
+      }
+    ],
+    "walkthrough": [
+      "Start: 4 elements at indexes 1, 2, 3, 4.",
+      "`delete(2)` removes index 2 -> remaining indexes 1, 3, 4.",
+      "`COUNT`=3, `FIRST`=1, `LAST`=4; `exists(2)`=FALSE -> `NO`.",
+      "Output: `3-1-4-NO`."
+    ],
+    "id": 132
+  },
+  {
+    "source": "exam",
+    "type": "code",
+    "category": "past_exam",
+    "question": "Consider the table employees(employee_id number primary key, salary number). No employee has employee_id = 999. What does the following PL/SQL block display?\nCode:\nset serveroutput on;\ndeclare\n  v_salary employees.salary%type;\nbegin\n  select salary into v_salary from employees where employee_id = 999;\n  dbms_output.put_line(v_salary);\nexception\n  when no_data_found then\n    dbms_output.put_line('No such employee');\nend;",
+    "answers": [
+      {
+        "text": "No such employee",
+        "isCorrect": true
+      },
+      {
+        "text": "The block does not compile",
+        "isCorrect": false
+      },
+      {
+        "text": "NULL",
+        "isCorrect": false
+      },
+      {
+        "text": "0",
+        "isCorrect": false
+      },
+      {
+        "text": "Raises TOO_MANY_ROWS",
+        "isCorrect": false
+      }
+    ],
+    "explanation": "The `SELECT ... INTO` finds no row for `employee_id = 999`, which raises `NO_DATA_FOUND`. The handler catches it and prints `No such employee`. A `SELECT INTO` returning zero rows always raises `NO_DATA_FOUND` — it never silently returns `NULL`.",
+    "annotations": [
+      {
+        "n": 1,
+        "find": "select salary into v_salary from employees where employee_id = 999;",
+        "note": "Matches no row, so SELECT INTO raises NO_DATA_FOUND."
+      },
+      {
+        "n": 2,
+        "find": "when no_data_found then",
+        "note": "Catches that exception and prints the message."
+      }
+    ],
+    "walkthrough": [
+      "`SELECT salary INTO v_salary ... WHERE employee_id = 999` matches no row.",
+      "Zero rows from a `SELECT INTO` raises `NO_DATA_FOUND`.",
+      "The handler catches it and prints `No such employee`."
+    ],
+    "id": 133
+  },
+  {
+    "source": "exam",
+    "type": "code",
+    "category": "past_exam",
+    "question": "What does the following PL/SQL block display?\nCode:\nset serveroutput on;\ndeclare\n  type t_nt is table of number;\n  v_nt t_nt := t_nt(5, 10, 15);\nbegin\n  v_nt.trim;\n  dbms_output.put_line(v_nt.count || '-' || v_nt.last);\nend;",
+    "answers": [
+      {
+        "text": "2-2",
+        "isCorrect": true
+      },
+      {
+        "text": "Raises COLLECTION_IS_NULL",
+        "isCorrect": false
+      },
+      {
+        "text": "2-3",
+        "isCorrect": false
+      },
+      {
+        "text": "1-2",
+        "isCorrect": false
+      },
+      {
+        "text": "3-3",
+        "isCorrect": false
+      }
+    ],
+    "explanation": "The nested table has 3 elements (indexes 1..3). `TRIM` with no argument removes one element from the end, leaving indexes 1 and 2. So `COUNT` is `2` and `LAST` is `2`. Output: `2-2`.",
+    "annotations": [
+      {
+        "n": 1,
+        "find": "v_nt.trim;",
+        "note": "Removes one element from the END of the collection (3 -> 2)."
+      },
+      {
+        "n": 2,
+        "find": "v_nt.count || '-' || v_nt.last",
+        "note": "After trim: COUNT=2 and LAST=2."
+      }
+    ],
+    "walkthrough": [
+      "Start: 3 elements at indexes 1, 2, 3.",
+      "`trim` removes the last element -> indexes 1, 2.",
+      "`COUNT`=2, `LAST`=2.",
+      "Output: `2-2`."
+    ],
     "id": 134
+  },
+  {
+    "source": "exam",
+    "type": "code",
+    "category": "past_exam",
+    "question": "The following package is created:\nCode:\ncreate or replace package counter_pkg as\n  g_nr number := 0;\n  procedure increment;\nend counter_pkg;\n/\ncreate or replace package body counter_pkg as\n  procedure increment is\n  begin\n    g_nr := g_nr + 1;\n    dbms_output.put_line(g_nr);\n  end;\nend counter_pkg;\n/\nset serveroutput on;\nbegin\n  counter_pkg.increment;\n  counter_pkg.increment;\nend;\nWhat does the block display, in a new session?",
+    "answers": [
+      {
+        "text": "1 and 2",
+        "isCorrect": true
+      },
+      {
+        "text": "The block does not compile, because packages cannot have global variables",
+        "isCorrect": false
+      },
+      {
+        "text": "0 and 0",
+        "isCorrect": false
+      },
+      {
+        "text": "2 and 2",
+        "isCorrect": false
+      },
+      {
+        "text": "1 and 1",
+        "isCorrect": false
+      }
+    ],
+    "explanation": "A package-level variable like `g_nr` is session state: it keeps its value between calls within the same session. The first `increment` sets `g_nr` to `1` and prints `1`; the second sets it to `2` and prints `2`. Packages can hold global (package-level) variables — that is exactly what `g_nr` is.",
+    "annotations": [
+      {
+        "n": 1,
+        "find": "g_nr number := 0;",
+        "note": "Package-level variable: initialised once per session, then persists across calls."
+      },
+      {
+        "n": 2,
+        "find": "g_nr := g_nr + 1;",
+        "note": "Each call increments the retained value: 0->1, then 1->2."
+      }
+    ],
+    "walkthrough": [
+      "`g_nr` starts at `0` the first time the package is referenced in the session.",
+      "First `increment`: `g_nr` becomes `1`, prints `1`.",
+      "Second `increment`: `g_nr` becomes `2`, prints `2`.",
+      "Output: `1` then `2`."
+    ],
+    "id": 135
+  },
+  {
+    "source": "exam",
+    "type": "code",
+    "category": "past_exam",
+    "question": "What does the following PL/SQL block display?\nCode:\nset serveroutput on;\ndeclare\n  v_salary number := -100;\nbegin\n  if v_salary < 0 then\n    raise_application_error(-20010, 'Invalid salary');\n  end if;\n  dbms_output.put_line('Valid');\nexception\n  when others then\n    dbms_output.put_line(sqlcode);\nend;",
+    "answers": [
+      {
+        "text": "-20010",
+        "isCorrect": true
+      },
+      {
+        "text": "The block does not compile, because RAISE_APPLICATION_ERROR cannot be called from an anonymous block",
+        "isCorrect": false
+      },
+      {
+        "text": "Invalid salary",
+        "isCorrect": false
+      },
+      {
+        "text": "Valid",
+        "isCorrect": false
+      },
+      {
+        "text": "20010",
+        "isCorrect": false
+      }
+    ],
+    "explanation": "`v_salary` is `-100`, so the `IF` is true and `raise_application_error(-20010, ...)` raises an error whose code is `-20010`. `WHEN OTHERS` catches it and prints `SQLCODE`, which is `-20010`. `RAISE_APPLICATION_ERROR` is allowed in anonymous blocks, and `SQLCODE` returns the negative error number, not its absolute value.",
+    "annotations": [
+      {
+        "n": 1,
+        "find": "raise_application_error(-20010, 'Invalid salary')",
+        "note": "Raises a user error with code -20010 and the given message."
+      },
+      {
+        "n": 2,
+        "find": "dbms_output.put_line(sqlcode)",
+        "note": "`SQLCODE` of the caught error is -20010."
+      }
+    ],
+    "walkthrough": [
+      "`v_salary = -100`, so `v_salary < 0` is true.",
+      "`raise_application_error(-20010, ...)` raises an error with code `-20010`.",
+      "`WHEN OTHERS` catches it; `SQLCODE` is `-20010`.",
+      "Output: `-20010`."
+    ],
+    "id": 136
+  },
+  {
+    "source": "exam",
+    "type": "theory",
+    "category": "past_exam",
+    "question": "Which statement about PL/SQL collection types is correct?",
+    "answers": [
+      {
+        "text": "An associative array (index-by table) can use arbitrary index values and does not need a constructor before its first assignment.",
+        "isCorrect": true
+      },
+      {
+        "text": "BULK COLLECT can only populate collections of VARRAY type.",
+        "isCorrect": false
+      },
+      {
+        "text": "A VARRAY allows gaps between indexes but preserves the order of elements.",
+        "isCorrect": false
+      },
+      {
+        "text": "The FIRST and LAST methods always return 1 and COUNT for any collection.",
+        "isCorrect": false
+      },
+      {
+        "text": "A nested table always keeps consecutive indexes, even after DELETE.",
+        "isCorrect": false
+      }
+    ],
+    "explanation": "An associative array (`INDEX BY` table) is the only collection used without a constructor — you simply assign to a key — and its keys may be arbitrary (`PLS_INTEGER` or `VARCHAR2`), not necessarily contiguous. `BULK COLLECT` works with any collection type, a `VARRAY` is always dense (no gaps), `FIRST`/`LAST` return the actual first/last index (which differ from 1/COUNT once a collection is sparse), and a nested table can become sparse after `DELETE`.",
+    "id": 137
   }
 ];
 
@@ -4203,24 +4734,28 @@ function pickFrom(pool, n, seen) {
 }
 
 function buildQuiz(mode, count) {
-  const coding = BANK.filter(isCodeQ);
-  const theory = BANK.filter(q => !isCodeQ(q));
+  const study = BANK.filter(q => !q.category);
   const seen = loadSeen();
   let chosen;
-  if (mode === 'mixed') {
-    chosen = pickFrom(BANK, count, seen);
+  if (mode === 'past') {
+    const pool = BANK.filter(q => q.category === 'past_exam');
+    chosen = pickFrom(pool, Math.min(count, pool.length), seen);
+  } else if (mode === 'mixed') {
+    chosen = pickFrom(study, Math.min(count, study.length), seen);
   } else {
+    const coding = study.filter(isCodeQ);
+    const theory = study.filter(q => !isCodeQ(q));
     const primary = mode === 'coding' ? coding : theory;
     const secondary = mode === 'coding' ? theory : coding;
     let nP, nS;
-    if (count >= BANK.length) {
+    if (count >= study.length) {
       nP = primary.length;
       nS = Math.round(secondary.length * 0.3);
     } else {
       nP = Math.min(Math.round(count * 0.7), primary.length);
       nS = Math.min(count - nP, secondary.length);
     }
-    let need = count >= BANK.length ? 0 : count - (nP + nS);
+    let need = count >= study.length ? 0 : count - (nP + nS);
     if (need > 0) { const a = Math.min(need, primary.length - nP); nP += a; need -= a; }
     if (need > 0) { const a = Math.min(need, secondary.length - nS); nS += a; }
     chosen = pickFrom(primary, nP, seen).concat(pickFrom(secondary, nS, seen));
